@@ -1,0 +1,147 @@
+public class ConfigurationManager
+{
+    private static ConfigurationManager _instance;
+    private static readonly object _lock = new object();
+    
+    private Dictionary<string, string> _settings;
+
+    private ConfigurationManager()
+    {
+        _settings = new Dictionary<string, string>();
+    }
+
+    public static ConfigurationManager GetInstance()
+    {
+        if (_instance == null)
+        {
+            lock (_lock)
+            {
+                if (_instance == null)
+                {
+                    _instance = new ConfigurationManager();
+                }
+            }
+        }
+        return _instance;
+    }
+}
+
+public class ConfigurationManager
+{
+
+    public void SetSetting(string key, string value)
+    {
+        if (_settings.ContainsKey(key))
+        {
+            _settings[key] = value;
+        }
+        else
+        {
+            _settings.Add(key, value);
+        }
+    }
+
+    public string GetSetting(string key)
+    {
+        if (_settings.ContainsKey(key))
+        {
+            return _settings[key];
+        }
+        else
+        {
+            throw new KeyNotFoundException($"Setting '{key}' not found.");
+        }
+    }
+
+    // Метод для загрузки настроек из словаря
+    public void LoadSettings(Dictionary<string, string> settings)
+    {
+        _settings = new Dictionary<string, string>(settings);
+    }
+
+    public Dictionary<string, string> GetAllSettings()
+    {
+        return new Dictionary<string, string>(_settings);
+    }
+}
+
+using System.IO;
+
+public class ConfigurationManager
+{
+
+    public void SaveToFile(string filePath)
+    {
+        using (StreamWriter writer = new StreamWriter(filePath))
+        {
+            foreach (var setting in _settings)
+            {
+                writer.WriteLine($"{setting.Key}={setting.Value}");
+            }
+        }
+    }
+
+    public void LoadFromFile(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException($"File {filePath} not found.");
+        }
+
+        _settings.Clear();
+        foreach (var line in File.ReadAllLines(filePath))
+        {
+            var parts = line.Split('=');
+            if (parts.Length == 2)
+            {
+                _settings[parts[0]] = parts[1];
+            }
+        }
+    }
+}
+
+
+// Дополнительное задание
+public string GetSetting(string key)
+{
+    if (_settings.ContainsKey(key))
+    {
+        return _settings[key];
+    }
+    else
+    {
+        throw new KeyNotFoundException($"Setting '{key}' not found.");
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Многопоточная среда для тестирования
+        Thread thread1 = new Thread(() =>
+        {
+            ConfigurationManager config1 = ConfigurationManager.GetInstance();
+            config1.SetSetting("Theme", "Dark");
+            Console.WriteLine($"Thread 1: Theme = {config1.GetSetting("Theme")}");
+        });
+
+        Thread thread2 = new Thread(() =>
+        {
+            ConfigurationManager config2 = ConfigurationManager.GetInstance();
+            config2.SetSetting("Language", "English");
+            Console.WriteLine($"Thread 2: Language = {config2.GetSetting("Language")}");
+        });
+
+        thread1.Start();
+        thread2.Start();
+
+        thread1.Join();
+        thread2.Join();
+
+        // Убедимся, что настройки совместно используются
+        ConfigurationManager config = ConfigurationManager.GetInstance();
+        Console.WriteLine($"Main Thread: Theme = {config.GetSetting("Theme")}");
+        Console.WriteLine($"Main Thread: Language = {config.GetSetting("Language")}");
+    }
+}
